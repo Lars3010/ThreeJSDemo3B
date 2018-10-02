@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>3B Three.JS</title>
+	<style>
+		body{margin: 0; padding: 0;}
+		canvas{width: 100%; height: 100%;}
+	</style>
+</head>
+<body>
+<script src="three.min.js"></script>
+<script src="js/controls/OrbitControls.js"></script>
+<script src="phyijs/physi.js"></script>
+<script>
+	var WIDTH = window.innerWidth;
+    var HEIGHT = window.innerHeight;
+
+    Physijs.scripts.worker = '/phyijs/physijs_worker.js';
+	Physijs.scripts.ammo = '/phyijs/examples/js/ammo.js';
+
+    var initScene, renderer, scene, camera, controls, addBox, addFloor, materials, buildLegs, buildTabletop, createTable, listener;
+    var materialBox, materialFloor, materialTable, materialSlope, materialBall;
+    materials = [];
+
+    initScene = function(){
+        //set scene
+        scene = new Physijs.Scene;
+
+        //set camera and add to scene
+        camera = new THREE.PerspectiveCamera(100, WIDTH/HEIGHT);
+        //camera.position.set( 0, 20, -100 );
+        camera.position.set( 20, 5, 0 );
+
+         //set renderer
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(WIDTH, HEIGHT);
+        renderer.setClearColor(0xDDDDDD, 1);
+        document.body.appendChild(renderer.domElement);
+
+        //orbit controls
+        controls = new THREE.OrbitControls(camera,renderer.domElement);
+        controls.update();
+        defineMaterials();
+
+        addFloor();
+        sphere = addSphere(2);
+        table = createTable(6);
+
+        listener(sphere);
+    }
+
+    defineMaterials = function()
+    {
+        materials.push(
+            materialBox = new THREE.MeshBasicMaterial({ color: 0x985888 }),
+            materialFloor = new THREE.MeshBasicMaterial({ color: 0x451388 }),
+            materialTable = new THREE.MeshBasicMaterial({ color: 0x458974 }),
+        );
+    }
+
+    addSphere = function(height)
+    {
+        var height;
+
+        var sphere = new Physijs.SphereMesh(
+            new THREE.SphereGeometry(1, 32, 32),
+			materials[0],
+        );
+        sphere.position.y = height;
+        sphere.position.x = 5;
+        scene.add(sphere);
+        return sphere;
+    }
+
+    addFloor = function()
+    {
+        var floor = new Physijs.PlaneMesh(
+            new THREE.PlaneGeometry(40,40,10),
+            materials[1],
+        )
+        floor.rotateX(-Math.PI/2);
+        scene.add(floor);
+    }
+
+    buildLegs = function()
+    {
+        var leg, _leg;
+
+        leg = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(0.5, 5, 0.5),
+            materials[3],
+        )
+        leg.position.set(3, -2.5, -2);
+
+        //back-left
+
+        _leg = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(0.5, 5, 0.5),
+            materials[3],
+        )
+        _leg.position.x = -6;
+        leg.add(_leg);
+
+        //front-right
+       _leg = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(0.5, 5, 0.5),
+            materials[3],
+        )
+        _leg.position.z = 4;
+        leg.add(_leg);
+
+        //back-right
+        _leg = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(0.5, 5, 0.5),
+            materials[3],
+        )
+        _leg.position.x = -6;
+        _leg.position.z = 4;
+        leg.add(_leg);
+
+        return leg;
+    }
+
+    buildTabletop = function()
+    {
+        var tabletop;
+
+        tabletop = new Physijs.BoxMesh(
+            new THREE.CubeGeometry(6.8, 0.5, 4.8),
+            materials[3]
+        )
+        tabletop.position.set(0,0,0);
+
+        return tabletop;
+    }
+
+    createTable = function(height)
+    {
+        var table, legs, height;
+        
+        table = buildTabletop();
+        table.position.set(0,height,0);
+
+
+        legs = buildLegs();
+        table.add(legs);
+
+        scene.add(table);
+        return table;
+    }
+
+    listener = function(object)
+    {
+        
+        //add eventlistener
+        document.addEventListener('keydown', (event) => {
+            //forwards
+            if(event.keyCode == 87)
+            {
+                var force = new THREE.Vector3(-10, 0, 0);
+                object.applyCentralImpulse(force);
+            }
+            //backwards
+            if(event.keyCode == 83)
+            {
+                var force = new THREE.Vector3(10, 0, 0);
+                object.applyCentralImpulse(force);
+            }
+            //left
+            if(event.keyCode == 65)
+            {
+                var force = new THREE.Vector3(0, 0, 10);
+                object.applyCentralImpulse(force);
+            }
+            //right
+            if(event.keyCode == 68)
+            {
+                var force = new THREE.Vector3(0, 0, -10);
+                object.applyCentralImpulse(force);
+            } 
+        });
+    }
+
+    
+
+    //render scene
+    function render() {
+        requestAnimationFrame(render);
+        scene.simulate();
+        renderer.render(scene, camera);
+    }
+    initScene();
+    render();
+
+</script>
+</body>
+</html>
